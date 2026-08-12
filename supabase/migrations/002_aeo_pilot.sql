@@ -390,6 +390,23 @@ revoke all on function public.aeo_record_response(
 
 do $$
 begin
+  -- Hosted Supabase projects grant function execution to API roles through
+  -- default privileges. PUBLIC revocation alone does not remove those grants,
+  -- while local PostgreSQL-compatible test engines may not define the roles.
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on function public.aeo_record_response(
+      uuid, uuid, text, text, text, text, jsonb, text, boolean, integer,
+      integer, text, boolean, boolean, text, text, jsonb, jsonb
+    ) from anon';
+  end if;
+
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke all on function public.aeo_record_response(
+      uuid, uuid, text, text, text, text, jsonb, text, boolean, integer,
+      integer, text, boolean, boolean, text, text, jsonb, jsonb
+    ) from authenticated';
+  end if;
+
   if exists (select 1 from pg_roles where rolname = 'service_role') then
     grant execute on function public.aeo_record_response(
       uuid, uuid, text, text, text, text, jsonb, text, boolean, integer,

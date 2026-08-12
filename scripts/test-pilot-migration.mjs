@@ -5,6 +5,14 @@ import { PGlite } from "@electric-sql/pglite";
 const db = new PGlite();
 
 try {
+  // Supabase creates these API roles before project migrations. Reproduce them
+  // here so the migration test catches accidental RPC grants to browser roles.
+  await db.exec(`
+    create role anon nologin;
+    create role authenticated nologin;
+    create role service_role nologin;
+  `);
+
   for (const filename of [
     "supabase/migrations/001_kv_store.sql",
     "supabase/migrations/002_aeo_pilot.sql",
@@ -24,6 +32,19 @@ try {
   assert.deepEqual(seeded.rows, [
     { market: "ES", prompt_count: 3 },
     { market: "IT", prompt_count: 3 },
+  ]);
+
+  const rpcPrivileges = await db.query(`
+    select
+      has_function_privilege('anon', procedure.oid, 'execute') as anon,
+      has_function_privilege('authenticated', procedure.oid, 'execute') as authenticated,
+      has_function_privilege('service_role', procedure.oid, 'execute') as service_role
+    from pg_proc as procedure
+    where procedure.pronamespace = 'public'::regnamespace
+      and procedure.proname = 'aeo_record_response'
+  `);
+  assert.deepEqual(rpcPrivileges.rows, [
+    { anon: false, authenticated: false, service_role: true },
   ]);
 
   const batch = await db.query(`
