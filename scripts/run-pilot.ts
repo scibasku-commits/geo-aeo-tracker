@@ -20,7 +20,12 @@ async function main() {
       concurrency: 6,
     });
     console.log(JSON.stringify(result, null, 2));
-    if (result.fatalStorageErrors > 0) process.exitCode = 1;
+    if (result.fatalStorageErrors > 0 || result.successCount === 0) {
+      console.error(
+        "Pilot run did not produce any valid provider responses.",
+      );
+      process.exitCode = 1;
+    }
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Unknown pilot error");
     process.exitCode = 1;

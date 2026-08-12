@@ -2,13 +2,6 @@ name: Scibasku AEO pilot
 
 on:
   workflow_dispatch:
-  # Bootstrap the first real measurement before this workflow reaches main.
-  # The trigger and marker are removed after the run is verified.
-  push:
-    branches:
-      - codex/scibasku-pilot
-    paths:
-      - .github/pilot-bootstrap-trigger
   schedule:
     - cron: "15 5 * * *"
 
