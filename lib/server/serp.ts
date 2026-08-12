@@ -25,7 +25,10 @@ export async function fetchSerp(
   targetUrl: string,
 ): Promise<SerpResult> {
   const apiKey = process.env.BRIGHT_DATA_KEY;
-  const zone = process.env.BRIGHT_DATA_SERP_ZONE || "serp_n8n";
+  // `serp_api1` is the name Bright Data's own docs use for a SERP zone, so it is
+  // the likeliest to already exist on a fresh account. Override per-account with
+  // BRIGHT_DATA_SERP_ZONE.
+  const zone = process.env.BRIGHT_DATA_SERP_ZONE || "serp_api1";
 
   if (!apiKey) {
     console.error("[SERP] Missing BRIGHT_DATA_KEY");

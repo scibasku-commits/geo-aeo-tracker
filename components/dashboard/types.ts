@@ -3,8 +3,7 @@ export type Provider =
   | "perplexity"
   | "copilot"
   | "gemini"
-  | "google_ai"
-  | "grok";
+  | "google_ai";
 
 export type ScrapeRun = {
   provider: Provider;
@@ -85,7 +84,6 @@ export const ALL_PROVIDERS: Provider[] = [
   "copilot",
   "gemini",
   "google_ai",
-  "grok",
 ];
 
 export const PROVIDER_LABELS: Record<Provider, string> = {
@@ -94,7 +92,6 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
   copilot: "Copilot",
   gemini: "Gemini",
   google_ai: "Google AI",
-  grok: "Grok",
 };
 
 /** Countries available for geo-scoped AI-visibility tracking (Bright Data geolocation, 2-letter codes) */

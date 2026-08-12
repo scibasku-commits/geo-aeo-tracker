@@ -69,7 +69,7 @@ Existing tools charge **$200–$500+/month**, lock you into closed ecosystems, a
 
 ### 🚀 Core Capabilities
 
-- 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini, Copilot, Google AI Overview, Grok
+- 🤖 **Multi-model tracking** across ChatGPT, Perplexity, Gemini, Copilot, and Google AI Mode
 - 🌍 **Geo-scoped tracking**: run visibility checks by country and compare markets, with a "visibility by country" breakdown
 - � **SRO Analysis**: 6-stage pipeline scoring how well your page is optimized for AI search results
 - 📈 **Visibility scoring** (0–100): brand mentions, position, frequency, citations, sentiment
@@ -161,24 +161,17 @@ Copy the template and fill in your keys. Every variable is documented inline in 
 cp .env.example .env
 ```
 
-Only the required block is needed to run the tracker. The rest is optional and the app degrades gracefully without it.
+**Every variable is optional.** The app builds, boots, and deploys with an empty `.env` — you just get the sample dataset instead of live data. Add one key at a time to switch features on; nothing else breaks when one is missing.
 
 #### What each variable does
 
-- **`BRIGHT_DATA_KEY`** — your Bright Data API key.
-- **`BRIGHT_DATA_DATASET_*`** — one AI Scraper dataset ID per engine, from the [Scrapers Library](https://brightdata.com/cp/scrapers). Each engine is independent: set only the ones you want, a missing dataset just skips that engine.
-- **`BRIGHT_DATA_DATASET_GROK`** — **optional.** Bright Data does not always list a public Grok scraper. If your account has no Grok dataset, leave this blank and deselect Grok in the dashboard. The other engines run fine.
-- **`OPENROUTER_KEY`** — powers LLM analysis (`/api/analyze`, `/api/sro-analyze`, `/api/site-context`). Optional model override via `OPENROUTER_MODEL` (default `google/gemini-3.5-flash`).
-- **`GEMINI_API_KEY`** — **separate from OpenRouter and needed for SRO Analysis.** It powers the Gemini *grounding* stage, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, so this key is required even with OpenRouter set. Without it, the rest of the SRO pipeline still runs and just skips grounding.
+- **`BRIGHT_DATA_KEY`** — unlocks live AI-engine tracking. This is the one that matters: with no key the dashboard loads the sample dataset and tells you so in a banner. Add it and the same dashboard goes live.
+- **`OPENROUTER_KEY`** — powers LLM analysis (`/api/analyze`, `/api/sro-analyze`, `/api/site-context`). Without it, scraping still works and the analysis panels report that they are not configured. Model override via `OPENROUTER_MODEL` (default `google/gemini-3.5-flash`).
+- **`GEMINI_API_KEY`** — **separate from OpenRouter.** It powers only the Gemini *grounding* stage, which uses Google Search grounding to see which pages Gemini actually cites in real time. OpenRouter can't do that, which is why it is its own key. Missing key skips that one stage; the rest of the SRO pipeline runs.
+- **`BRIGHT_DATA_DATASET_*`** — **you don't need these.** The app ships with Bright Data's public AI-Scraper dataset ID for every engine. Set one only to point an engine at a custom or private dataset from the [Scrapers Library](https://brightdata.com/cp/scrapers).
+- **`BRIGHT_DATA_SERP_ZONE`** / **`BRIGHT_DATA_UNLOCKER_ZONE`** — zone **names** for the SRO pipeline. They default to `serp_api1` and `web_unlocker1`, the names Bright Data's own docs use, so most accounts work untouched. Set them if you named your zones differently.
 
-#### Bright Data zones (SERP + Web Unlocker)
-
-The SRO pipeline needs two zones. Create them once in the Bright Data dashboard and paste the **zone names** (not the keys):
-
-- **`BRIGHT_DATA_SERP_ZONE`** — a [SERP API](https://brightdata.com/products/serp-api) zone. Default settings are fine.
-- **`BRIGHT_DATA_UNLOCKER_ZONE`** — a [Web Unlocker](https://brightdata.com/products/web-unlocker) zone. Defaults are fine (JS rendering on, automatic CAPTCHA solving). Used to scrape cited and target pages.
-
-Optional Supabase cloud-sync and demo-mode variables are documented in `.env.example`.
+Supabase cloud-sync and demo-mode variables are documented in `.env.example`.
 
 ```bash
 npm run dev
@@ -196,13 +189,15 @@ npm run lint            # ESLint
 
 ## Deploy to Vercel
 
-> ✅ **The deploy button launches a fully functional production instance.** You'll be prompted for your API keys during setup. No demo mode, no restrictions.
+> ✅ **Deploys with zero configuration.** No keys are requested during setup. The deployment lands on a working dashboard running the sample dataset, and you add keys afterwards to switch it to live data.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdanishashko%2Fgeo-aeo-tracker&env=BRIGHT_DATA_KEY,BRIGHT_DATA_DATASET_CHATGPT,BRIGHT_DATA_DATASET_PERPLEXITY,BRIGHT_DATA_DATASET_COPILOT,BRIGHT_DATA_DATASET_GEMINI,BRIGHT_DATA_DATASET_GOOGLE_AI,BRIGHT_DATA_DATASET_GROK,BRIGHT_DATA_SERP_ZONE,BRIGHT_DATA_UNLOCKER_ZONE,OPENROUTER_KEY,GEMINI_API_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdanishashko%2Fgeo-aeo-tracker)
 
 1. Click the button above (or run `vercel --prod` from your clone)
-2. Enter your [Bright Data](https://brightdata.com/?utm_source=geo-tracker-os) and [OpenRouter](https://openrouter.ai/) API keys when prompted
-3. Done! Your tracker deploys automatically with full production capabilities
+2. Wait for the build. You now have a live URL showing the sample dashboard
+3. To track real engines, go to **Project Settings → Environment Variables**, add `BRIGHT_DATA_KEY` (and `OPENROUTER_KEY` for the analysis layer), then redeploy
+
+Step 3 is genuinely optional. If you only wanted to look around, stop after step 2.
 
 ### 🧪 Demo-Only Mode (optional)
 

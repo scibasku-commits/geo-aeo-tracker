@@ -7,7 +7,6 @@ const ProviderSchema = z.enum([
   "copilot",
   "gemini",
   "google_ai",
-  "grok",
 ]);
 
 type Provider = z.infer<typeof ProviderSchema>;
@@ -25,7 +24,18 @@ const providerToDatasetEnv: Record<Provider, string> = {
   copilot: "BRIGHT_DATA_DATASET_COPILOT",
   gemini: "BRIGHT_DATA_DATASET_GEMINI",
   google_ai: "BRIGHT_DATA_DATASET_GOOGLE_AI",
-  grok: "BRIGHT_DATA_DATASET_GROK",
+};
+
+// Bright Data's public AI-scraper dataset IDs. These are the same for every
+// account, so nobody needs to set a dataset env var just to get started — the
+// env vars stay as an override for anyone on a custom or private dataset.
+// Every ID below was triggered live and returned a real answer on 2026-08-12.
+const providerDefaultDataset: Record<Provider, string> = {
+  chatgpt: "gd_m7aof0k82r803d5bjm",
+  perplexity: "gd_m7dhdot1vw9a7gc1n",
+  copilot: "gd_m7di5jy6s9geokz8w",
+  gemini: "gd_mbz66arm2mf9cu856y",
+  google_ai: "gd_mcswdt6z2elth3zqr2",
 };
 
 const providerBaseUrl: Record<Provider, string> = {
@@ -34,7 +44,6 @@ const providerBaseUrl: Record<Provider, string> = {
   copilot: "https://copilot.microsoft.com/",
   gemini: "https://gemini.google.com/",
   google_ai: "https://www.google.com/",
-  grok: "https://grok.com/",
 };
 
 type ScrapeRequest = {
@@ -60,7 +69,10 @@ function getApiKey() {
 }
 
 function getDatasetId(provider: Provider) {
-  return process.env[providerToDatasetEnv[provider]];
+  return (
+    process.env[providerToDatasetEnv[provider]] ||
+    providerDefaultDataset[provider]
+  );
 }
 
 function buildCacheKey(input: ScrapeRequest) {
@@ -244,9 +256,9 @@ function extractSourcesFromAnswer(answer: string) {
 function normalizeAnswer(rawRecord: Record<string, unknown>) {
   const answerCandidates = [
     rawRecord.answer_text, // Bright Data primary field
-    rawRecord.answer_text_markdown, // Markdown variant (Perplexity, Grok, Copilot)
+    rawRecord.answer_text_markdown, // Markdown variant (Perplexity, Copilot)
     rawRecord.answer, // Legacy / fallback
-    rawRecord.response_raw, // Grok raw response
+    rawRecord.response_raw, // raw response fallback
     rawRecord.response,
     rawRecord.output,
     rawRecord.result,
@@ -390,10 +402,13 @@ export async function runAiScraper(
   const parsed = ProviderSchema.parse(request.provider);
   const datasetId = getDatasetId(parsed);
 
+  // Only reachable if the env override is present but empty, since every
+  // provider has a working default.
   if (!datasetId) {
     throw new Error(
-      `${parsed} is not configured. Set ${providerToDatasetEnv[parsed]} in your .env to enable it, ` +
-        `or deselect ${parsed} in the dashboard. This engine is optional and the others run without it.`,
+      `${parsed} has no dataset ID. ${providerToDatasetEnv[parsed]} is set but empty — ` +
+        `remove it to fall back to the public default, or paste a dataset ID from ` +
+        `https://brightdata.com/cp/scrapers. The other engines run without it.`,
     );
   }
 
@@ -416,6 +431,11 @@ export async function runAiScraper(
     inputRecord.country = request.country;
   }
 
+  // Bright Data's synchronous endpoint gives up after ~60s and hands back a
+  // snapshot_id to poll instead. Our own timeout must sit ABOVE that, or we
+  // abort in the same instant Bright Data is answering and lose the handoff —
+  // which is what made Gemini and Copilot (the two slowest engines) fail while
+  // the faster ones passed.
   const scrapeResponse = await fetchWithTimeout(
     `https://api.brightdata.com/datasets/v3/scrape?dataset_id=${datasetId}&notify=false&include_errors=true&format=json`,
     {
@@ -423,23 +443,32 @@ export async function runAiScraper(
       headers: withAuthHeaders(),
       body: JSON.stringify({ input: [inputRecord] }),
     },
-    60_000,
+    90_000,
   );
 
   let payload: unknown;
 
-  if (scrapeResponse.status === 202) {
-    const pending = (await scrapeResponse.json()) as {
-      snapshot_id: string;
-    };
-    await monitorUntilReady(pending.snapshot_id);
-    payload = await downloadSnapshot(pending.snapshot_id);
-  } else {
-    if (!scrapeResponse.ok) {
-      const text = await scrapeResponse.text();
-      throw new Error(`Scrape failed (${scrapeResponse.status}): ${text}`);
-    }
-    payload = await scrapeResponse.json();
+  if (!scrapeResponse.ok && scrapeResponse.status !== 202) {
+    const text = await scrapeResponse.text();
+    throw new Error(`Scrape failed (${scrapeResponse.status}): ${text}`);
+  }
+
+  payload = await scrapeResponse.json();
+
+  // The handoff arrives as 202, but also as a plain 200 whose body is a bare
+  // {snapshot_id} object rather than the usual array of records. Detect it by
+  // shape so either form is followed through to the poll.
+  const pendingId =
+    !Array.isArray(payload) &&
+    payload &&
+    typeof payload === "object" &&
+    typeof (payload as { snapshot_id?: unknown }).snapshot_id === "string"
+      ? (payload as { snapshot_id: string }).snapshot_id
+      : null;
+
+  if (pendingId) {
+    await monitorUntilReady(pendingId);
+    payload = await downloadSnapshot(pendingId);
   }
 
   // Keep unsanitized first record for structured source extraction

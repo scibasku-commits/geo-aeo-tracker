@@ -148,7 +148,6 @@ const DEMO_SRO_RESULT: SROState = {
     demoPlatform("gemini", "Gemini", false, 3),
     demoPlatform("copilot", "Copilot", true, 3),
     demoPlatform("ai_mode", "Google AI Mode", false, 6),
-    demoPlatform("grok", "Grok", false, 2),
   ],
   serp: {
     keyword: "best healthy meal kit",

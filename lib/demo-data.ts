@@ -78,7 +78,6 @@ const PROVIDERS: Provider[] = [
   "gemini",
   "copilot",
   "google_ai",
-  "grok",
 ];
 
 const SAMPLE_SOURCES: Record<string, string[]> = {
@@ -120,10 +119,6 @@ const SAMPLE_SOURCES: Record<string, string[]> = {
     "https://www.tomsguide.com/best-picks/best-meal-kit-delivery",
     "https://forkful.com/express",
     "https://saveurkits.com/",
-  ],
-  "grok-2": [
-    "https://www.reddit.com/r/mealkits/",
-    "https://forkful.com/express",
   ],
   "chatgpt-3": [
     "https://www.goodhousekeeping.com/food-products/meal-kit-reviews/",
@@ -587,7 +582,6 @@ export const DEMO_STATE: AppState = {
     "gemini",
     "copilot",
     "google_ai",
-    "grok",
   ],
   country: "US",
   prompt:

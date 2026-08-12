@@ -50,13 +50,6 @@ export const PLATFORMS: PlatformConfig[] = [
     targetUrl: "https://copilot.microsoft.com",
     defaultDatasetId: "gd_m7di5jy6s9geokz8w",
   },
-  {
-    id: "grok",
-    label: "Grok",
-    datasetEnvVar: "BRIGHT_DATA_DATASET_GROK",
-    targetUrl: "https://grok.com",
-    defaultDatasetId: "gd_m8ve0u141icu75ae74",
-  },
 ];
 
 function getApiKey(): string {

@@ -3,14 +3,7 @@ import { z } from "zod";
 import { runAiScraper } from "@/lib/server/brightdata-scraper";
 
 const InputSchema = z.object({
-  provider: z.enum([
-    "chatgpt",
-    "perplexity",
-    "copilot",
-    "gemini",
-    "google_ai",
-    "grok",
-  ]),
+  provider: z.enum(["chatgpt", "perplexity", "copilot", "gemini", "google_ai"]),
   prompt: z.string().min(3),
   requireSources: z.boolean().optional(),
   country: z.string().optional(),

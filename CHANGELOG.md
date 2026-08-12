@@ -4,6 +4,29 @@ All notable changes to GEO/AEO Tracker are documented here.
 
 ---
 
+## [1.5.0] — 2026-08-12
+
+### ⚙️ Every environment variable is now optional
+
+- **Zero-config deploy.** The Vercel deploy button no longer asks for a single key. A fresh deploy builds, boots, and lands on a working dashboard running the sample dataset; add `BRIGHT_DATA_KEY` afterwards to switch it to live data. Verified by building and booting with an empty environment.
+- **Dataset IDs ship with the app.** `BRIGHT_DATA_DATASET_*` used to be required for the main tracking path — without them every engine failed with "not configured", even though the SRO path already had defaults. All five engines now carry Bright Data's public dataset ID, with the env vars kept as an override for custom or private datasets.
+- **Zone names default sensibly.** `BRIGHT_DATA_SERP_ZONE` fell back to `serp_n8n`, a zone name that only existed on one account. It now falls back to `serp_api1`, the name Bright Data's own docs use.
+- **Missing key is a state, not an error.** With no `BRIGHT_DATA_KEY` the dashboard renders the sample dataset behind a banner explaining what to add, instead of a live dashboard whose every request fails.
+
+### 🐛 Fix: Gemini and Copilot no longer time out
+
+- The scrape client aborted at exactly 60s, which is also when Bright Data's synchronous endpoint gives up and hands back a `snapshot_id` to poll. The two slowest engines lost that handoff and failed while faster ones passed. The client now waits 90s and follows the handoff whether it arrives as a `202` or as a `200` whose body is a bare `{snapshot_id}`.
+
+### 🗑️ Removed: Grok
+
+- Grok is gone from the engine list, types, API schema, colours, and demo data. Bright Data's Grok scraper accepts a trigger and then never completes — measured live at over 6 minutes still running while every other engine finished in 15-90 seconds. Leaving it in meant a guaranteed stall on every full run.
+
+### ✅ Verified live
+
+All five remaining engines were run end to end through `/api/scrape` with **no dataset env vars set**, confirming the defaults work: ChatGPT (2,194 chars / 47 sources), Perplexity (445 / 10), Gemini (2,656 / 0 — Gemini returns answers without citations), Copilot (2,604 / 5), Google AI Mode (3,358 / 28). Geo targeting re-confirmed: the same prompt at `US` vs `GB` returns 911 vs 999/112.
+
+---
+
 ## [1.4.1] — 2026-07-22
 
 ### 🐛 Fix: geo-scoped tracking now actually targets the country

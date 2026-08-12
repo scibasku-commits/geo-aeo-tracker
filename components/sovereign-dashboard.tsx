@@ -293,7 +293,8 @@ const tabMeta: Record<
 
 export function SovereignDashboard({
   demoMode = false,
-}: { demoMode?: boolean } = {}) {
+  demoReason = "explicit",
+}: { demoMode?: boolean; demoReason?: "explicit" | "no-key" } = {}) {
   const [activeTab, setActiveTab] = useState<TabKey>("Visibility Analytics");
   const [state, setState] = useState<AppState>(
     demoMode ? DEMO_STATE : defaultState,
@@ -1418,7 +1419,7 @@ Requirements:
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: `${brandCtx}You are an AI search visibility analyst. Analyze how AI models (ChatGPT, Perplexity, Gemini, Copilot, Google AI, Grok) likely perceive the competitor "${name}".
+            prompt: `${brandCtx}You are an AI search visibility analyst. Analyze how AI models (ChatGPT, Perplexity, Gemini, Copilot, Google AI) likely perceive the competitor "${name}".
 
 Return ONE JSON object with:
 - "competitor": "${name}"
@@ -1925,7 +1926,11 @@ ${exampleJson}`,
         {demoMode && (
           <div className="flex shrink-0 items-center justify-center gap-2 border-b border-th-border bg-th-accent-soft px-4 py-1.5 text-xs font-medium text-th-text-accent">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-th-accent" />
-            <span>Read-only demo — sample data, live API calls disabled</span>
+            <span>
+              {demoReason === "no-key"
+                ? "Sample data — add BRIGHT_DATA_KEY to your environment to track live AI engines"
+                : "Read-only demo — sample data, live API calls disabled"}
+            </span>
           </div>
         )}
         {/* Toolbar */}
