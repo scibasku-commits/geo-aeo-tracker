@@ -249,6 +249,61 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 - All app state keyed by workspace (`sovereign-aeo-tracker-*`) — runs, prompts, settings, SRO results.
 - NOT synced (kept local on purpose): theme preference, workspace list, active workspace — these are per-device UI choices.
 
+## Scibasku AEO pilot
+
+This fork includes a bounded, evidence-first pilot for six ski prompts: three in
+Spain and three in Italy, queried against ChatGPT, Perplexity, and Google AI
+Mode. It stores every successful response and every failed attempt in relational
+Supabase tables. Timeouts and provider errors are retained but excluded from the
+visibility denominator.
+
+The pilot tracks two different outcomes:
+
+- **Visibility:** the response mentions Viajes Scibasku or one of its aliases.
+- **Influence:** the response cites `viajesscibasku.com`, `ilovecanada.travel`,
+  or `viajesdeski.es` even when the brand name is absent.
+
+Configured competitors count toward share of voice. Structured names discovered
+in answer lists are stored separately as reviewable candidates and do not affect
+share of voice until confirmed.
+
+### Setup
+
+1. Apply both SQL files in order:
+
+   ```text
+   supabase/migrations/001_kv_store.sql
+   supabase/migrations/002_aeo_pilot.sql
+   ```
+
+2. Configure these server-side variables locally, in GitHub Actions, and in the
+   eventual dashboard deployment:
+
+   ```env
+   BRIGHT_DATA_KEY=
+   SUPABASE_URL=
+   SUPABASE_SERVICE_ROLE_KEY=
+   PILOT_RUN_SECRET=
+   PILOT_DASHBOARD_USER=
+   PILOT_DASHBOARD_PASSWORD=
+   ```
+
+3. Run a manual batch with `npm run pilot:run`. The command fails before making
+   paid requests when any required capture or database key is missing.
+
+4. The workflow `.github/workflows/scibasku-aeo-pilot.yml` runs the same batch
+   daily at 05:15 UTC and can also be triggered manually. Add the three named
+   repository secrets before enabling it.
+
+5. Open `/pilot` for the compact dashboard. Production requests require Basic
+   authentication; development remains accessible locally. The page reports
+   valid responses, visibility, influence, share of voice, errors, timeouts,
+   prompt versions, and reviewable competitor candidates.
+
+`npm test` verifies the scoring/authentication logic and executes both migrations
+inside an ephemeral PostgreSQL-compatible database, including raw evidence,
+citations, mentions, timeout handling, and denominator rules.
+
 ## API Routes
 
 | Route | Runtime | Purpose |
@@ -263,6 +318,8 @@ By default, **all your data stays in your browser** (IndexedDB). That's great fo
 | `POST /api/brightdata-platforms` | Node.js | 6-platform AI citation polling via Bright Data datasets |
 | `POST /api/bulk-sro` | Node.js | SSE streaming — bulk SRO analysis across multiple keywords |
 | `GET/PUT/DELETE /api/state` | Node.js | Cloud KV store proxy — reads/writes to Supabase using service-role key (disabled when cloud not configured) |
+| `POST /api/pilot/run` | Node.js | Authenticated six-prompt, three-provider pilot batch |
+| `GET /api/pilot/results` | Node.js | Authenticated relational pilot results for integrations |
 
 All routes include input validation and error handling. Most routes use in-memory caching to minimize API costs.
 

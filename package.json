@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test lib/server/pilot-analysis.test.cts lib/server/pilot-auth.test.cts && node scripts/test-pilot-migration.mjs",
+    "pilot:run": "tsx scripts/run-pilot.ts",
     "test:scraper": "node --env-file=.env scripts/test-scraper.js",
     "test:pillar": "node scripts/test-pillar.js"
   },
@@ -21,13 +23,15 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.3.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

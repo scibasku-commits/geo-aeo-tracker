@@ -1,0 +1,41 @@
+name: Scibasku AEO pilot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 5 * * *"
+
+concurrency:
+  group: scibasku-aeo-pilot
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  daily-measurement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PILOT_PROJECT_SLUG: scibasku-ski
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify required secrets
+        run: |
+          missing=0
+          for key_name in BRIGHT_DATA_KEY SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!key_name}" ]; then
+              echo "::error::$key_name is not configured"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - run: npm run pilot:run
