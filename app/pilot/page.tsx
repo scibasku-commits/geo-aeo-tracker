@@ -111,6 +111,22 @@ export default async function PilotPage() {
   const metrics = dashboard.metrics as Row[];
   const responses = dashboard.responses as Row[];
   const candidates = dashboard.candidates as Row[];
+  const promptCount = dashboard.definition.prompts.length;
+  const marketNames = new Map([
+    ["ES", "España"],
+    ["IT", "Italia"],
+  ]);
+  const markets = new Intl.ListFormat("es-ES", {
+    style: "long",
+    type: "conjunction",
+  }).format(
+    [...new Set(dashboard.definition.prompts.map((prompt) => prompt.market))].map(
+      (market) => marketNames.get(market) ?? market,
+    ),
+  );
+  const questionLabel = promptCount === 1 ? "pregunta" : "preguntas";
+  const measuredLabel = promptCount === 1 ? "medida" : "medidas";
+  const readyLabel = promptCount === 1 ? "lista" : "listas";
   const latestBatch = batches[0];
   const latestBatchId = latestBatch?.id;
   const latestResponses = responses.filter(
@@ -135,9 +151,10 @@ export default async function PilotPage() {
               Piloto AEO de Scibasku
             </h1>
             <p className="mt-3 max-w-[70ch] text-base leading-7 text-th-text-secondary">
-              Seis prompts versionados, España e Italia, medidos en ChatGPT,
-              Perplexity y Google AI Mode. Errores y timeouts quedan separados
-              del denominador.
+              Configuración activa: {promptCount} {questionLabel} para {markets},{" "}
+              {measuredLabel} en ChatGPT, Perplexity y Google AI Mode. Los
+              errores y las respuestas que no llegan a tiempo no cuentan como
+              ausencia de la marca.
             </p>
           </div>
           <Link
@@ -210,8 +227,9 @@ export default async function PilotPage() {
           <section className="mt-8 rounded-2xl border border-th-border bg-th-card p-7 shadow-sm">
             <h2 className="text-lg font-semibold">Todavía no hay mediciones</h2>
             <p className="mt-2 max-w-[68ch] text-base leading-7 text-th-text-secondary">
-              El esquema y los seis prompts están listos. El primer lote aparecerá
-              aquí cuando el capturador y Supabase tengan sus credenciales.
+              Hay {promptCount} {questionLabel} para {markets} {readyLabel} para
+              medir. El primer lote aparecerá aquí cuando el capturador y
+              Supabase tengan sus credenciales.
             </p>
           </section>
         )}
