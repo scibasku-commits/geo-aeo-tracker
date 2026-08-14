@@ -2,6 +2,11 @@ name: Scibasku AEO pilot
 
 on:
   workflow_dispatch:
+    inputs:
+      project_slug:
+        description: "Proyecto del piloto a medir (aeo_projects.slug)"
+        required: false
+        default: scibasku-ski
   schedule:
     - cron: "15 5 * * *"
 
@@ -20,7 +25,8 @@ jobs:
       BRIGHT_DATA_KEY: ${{ secrets.BRIGHT_DATA_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      PILOT_PROJECT_SLUG: scibasku-ski
+      # El cron diario no manda inputs: cae al default y sigue midiendo scibasku-ski.
+      PILOT_PROJECT_SLUG: ${{ inputs.project_slug || 'scibasku-ski' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
